@@ -1,0 +1,19 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environment
+.venv/
+
+# Logs and temp
+*.log
+/tmp/*.log
+*.pid
+
+# MacOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

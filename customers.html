@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banking Simulator — Customers</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Arial, sans-serif; margin: 0; padding: 0; }
+    header { background:#0b5; padding:12px 20px; color:#033; }
+    .container { display:flex; height: calc(100vh - 56px); }
+    .left { width: 48%; border-right:1px solid #eee; padding:16px; overflow:auto; }
+    .right { flex:1; padding:16px; overflow:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; border-bottom:1px solid #eee; text-align:left; }
+    tr:hover { background:#fafafa; }
+    .customer-row { cursor:pointer; }
+    .controls { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .small { font-size:0.9rem; color:#555 }
+    .badge { background:#f0f0f0; padding:4px 8px; border-radius:12px; font-size:0.8rem }
+    .dormant { color:#b33; font-weight:600 }
+    .account-row { cursor:pointer; }
+    .account-row:hover { background:#f0f8ff !important; }
+    .txn-section { margin-top:24px; border-top:1px solid #ddd; padding-top:16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <strong>Banking Simulator</strong> — Customers & Accounts
+  </header>
+
+  <div class="container">
+    <section class="left">
+      <div class="controls">
+        <input id="search" placeholder="Search customers (name or email)" style="flex:1;padding:8px"> 
+        <button id="refresh">Refresh</button>
+      </div>
+
+      <div id="customersCount" class="small"></div>
+      <table id="customersTbl">
+        <thead>
+          <tr><th>ID</th><th>Name</th><th>Email</th><th>Status</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="right">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="selectedTitle">Select a customer</h3>
+        <div>
+          <label><input type="checkbox" id="onlyDormant"> Show only dormant accounts</label>
+          &nbsp;&nbsp;
+          <label class="small">Dormant if inactive for&nbsp;<input id="daysInactive" value="180" style="width:70px"> days</label>
+        </div>
+      </div>
+
+      <div id="accountsArea">
+        <table id="accountsTbl">
+          <thead>
+            <tr><th>Acct ID</th><th>Number</th><th>Type</th><th>Balance</th><th>Last Tx</th><th>Days Inactive</th><th>Flags</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div id="txnSection" class="txn-section" style="display:none">
+        <h4 id="txnTitle">Transactions</h4>
+        <table id="txnTbl">
+          <thead>
+            <tr><th>Tx ID</th><th>Type</th><th>Amount</th><th>Description</th><th>Balance After</th><th>Timestamp</th><th>Status</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DATA_PATH = '/data'; // assume the repo root is served by a static server
+    let customers = [];
+    let accounts = [];
+    let ledger = [];
+    let selectedCustomerId = null;
+
+    function parseCSV(text) {
+      const lines = text.trim().split(/\r?\n/);
+      if (lines.length === 0) return [];
+      const hdr = lines[0].split(',').map(h => h.trim());
+      const rows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line) continue;
+        const cols = line.split(',');
+        const obj = {};
+        for (let j = 0; j < hdr.length; j++) {
+          obj[hdr[j]] = (cols[j] || '').trim();
+        }
+        rows.push(obj);
+      }
+      return rows;
+    }
+
+    async function loadCSV(file) {
+      const res = await fetch(`${DATA_PATH}/${file}`);
+      if (!res.ok) throw new Error('Failed to fetch ' + file + ' ('+res.status+')');
+      const text = await res.text();
+      return parseCSV(text);
+    }
+
+    async function loadAll() {
+      customers = await loadCSV('customers.csv');
+      accounts = await loadCSV('accounts.csv');
+      ledger = await loadCSV('ledger.csv');
+      document.getElementById('customersCount').textContent = `${customers.length} customers`;
+      renderCustomers(customers);
+    }
+
+    function renderCustomers(list) {
+      const tbody = document.querySelector('#customersTbl tbody');
+      tbody.innerHTML = '';
+      for (const c of list) {
+        const tr = document.createElement('tr');
+        tr.className = 'customer-row';
+        tr.dataset.customerId = c.customer_id;
+        tr.innerHTML = `<td>${c.customer_id}</td><td>${c.first_name} ${c.last_name}</td><td>${c.email}</td><td>${c.status}</td>`;
+        tr.addEventListener('click', () => selectCustomer(c.customer_id));
+        tbody.appendChild(tr);
+      }
+    }
+
+    function selectCustomer(customerId) {
+      const customer = customers.find(c => c.customer_id === customerId);
+      if (!customer) return;
+      selectedCustomerId = customerId;
+      document.getElementById('selectedTitle').textContent = `${customer.first_name} ${customer.last_name} — Accounts`;
+      renderAccounts(customerId);
+    }
+
+    function customerHasDormantAccounts(customerId, daysInactive) {
+      const acctRows = accounts.filter(a => a.customer_id === customerId);
+      const now = new Date();
+      for (const a of acctRows) {
+        const txns = ledger.filter(t => t.account_id === a.account_id);
+        let lastTx = null;
+        for (const t of txns) {
+          const d = new Date(t.timestamp);
+          if (!isNaN(d)) {
+            if (!lastTx || d > lastTx) lastTx = d;
+          }
+        }
+        let days = lastTx ? Math.floor((now - lastTx)/(1000*60*60*24)) : null;
+        const isDormant = (days === null) ? true : (days >= daysInactive);
+        if (isDormant) return true;
+      }
+      return false;
+    }
+
+    function renderAccounts(customerId) {
+      const acctRows = accounts.filter(a => a.customer_id === customerId);
+      const onlyDorm = document.getElementById('onlyDormant').checked;
+      const daysInactive = parseInt(document.getElementById('daysInactive').value) || 180;
+
+      const now = new Date();
+      const tbody = document.querySelector('#accountsTbl tbody');
+      tbody.innerHTML = '';
+
+      for (const a of acctRows) {
+        // find ledger txns for account
+        const txns = ledger.filter(t => t.account_id === a.account_id);
+        let lastTx = null;
+        for (const t of txns) {
+          const d = new Date(t.timestamp);
+          if (!isNaN(d)) {
+            if (!lastTx || d > lastTx) lastTx = d;
+          }
+        }
+        let lastTxText = lastTx ? lastTx.toISOString() : '—';
+        let days = lastTx ? Math.floor((now - lastTx)/(1000*60*60*24)) : null;
+        const isDormant = (days === null) ? true : (days >= daysInactive);
+
+        if (onlyDorm && !isDormant) continue;
+
+        const tr = document.createElement('tr');
+        tr.className = 'account-row';
+        tr.dataset.accountId = a.account_id;
+        tr.innerHTML = `<td>${a.account_id}</td><td>${a.account_number}</td><td>${a.account_type}</td><td>$${parseFloat(a.balance).toFixed(2)}</td><td>${lastTxText}</td><td>${days===null? 'N/A': days}</td><td>${isDormant? '<span class="dormant">DORMANT</span>':''}</td>`;
+        tr.addEventListener('click', () => showTransactions(a.account_id));
+        tbody.appendChild(tr);
+      }
+    }
+
+    function showTransactions(accountId) {
+      const txns = ledger.filter(t => t.account_id === accountId);
+      // Sort by timestamp (most recent first) and take last 10
+      txns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      const last10 = txns.slice(0, 10);
+
+      const account = accounts.find(a => a.account_id === accountId);
+      const acctNum = account ? account.account_number : accountId;
+
+      document.getElementById('txnTitle').textContent = `Last 10 Transactions — Account ${accountId} (${acctNum})`;
+      const tbody = document.querySelector('#txnTbl tbody');
+      tbody.innerHTML = '';
+
+      for (const t of last10) {
+        const tr = document.createElement('tr');
+        const ts = new Date(t.timestamp).toLocaleString();
+        tr.innerHTML = `<td>${t.transaction_id}</td><td>${t.transaction_type}</td><td>$${parseFloat(t.amount).toFixed(2)}</td><td>${t.description}</td><td>$${parseFloat(t.balance_after).toFixed(2)}</td><td>${ts}</td><td>${t.status}</td>`;
+        tbody.appendChild(tr);
+      }
+
+      document.getElementById('txnSection').style.display = 'block';
+    }
+
+    document.getElementById('search').addEventListener('input', (e)=>{
+      const q = e.target.value.toLowerCase().trim();
+      const onlyDorm = document.getElementById('onlyDormant').checked;
+      const daysInactive = parseInt(document.getElementById('daysInactive').value) || 180;
+      let list = customers;
+      if (q) {
+        list = customers.filter(c => (`${c.first_name} ${c.last_name}`.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) ));
+      }
+      if (onlyDorm) {
+        list = list.filter(c => customerHasDormantAccounts(c.customer_id, daysInactive));
+      }
+      renderCustomers(list);
+    });
+
+    document.getElementById('refresh').addEventListener('click', async ()=>{
+      try {
+        await loadAll();
+        selectedCustomerId = null;
+        document.getElementById('selectedTitle').textContent = 'Select a customer';
+        document.querySelector('#accountsTbl tbody').innerHTML = '';
+      } catch (err) {
+        alert('Refresh failed: '+err.message);
+      }
+    });
+
+    document.getElementById('onlyDormant').addEventListener('change', ()=>{
+      const onlyDorm = document.getElementById('onlyDormant').checked;
+      const daysInactive = parseInt(document.getElementById('daysInactive').value) || 180;
+      // If a customer is selected, re-render their accounts (show only dormant if checked)
+      if (selectedCustomerId) {
+        renderAccounts(selectedCustomerId);
+      }
+      // Update customer list to show only customers who have dormant accounts when checkbox is checked
+      if (onlyDorm) {
+        const filtered = customers.filter(c => customerHasDormantAccounts(c.customer_id, daysInactive));
+        renderCustomers(filtered);
+      } else {
+        // respect current search filter
+        const q = document.getElementById('search').value.toLowerCase().trim();
+        if (q) {
+          const filtered = customers.filter(c => (`${c.first_name} ${c.last_name}`.toLowerCase().includes(q) || (c.email||'').toLowerCase().includes(q) ));
+          renderCustomers(filtered);
+        } else {
+          renderCustomers(customers);
+        }
+      }
+    });
+
+    document.getElementById('daysInactive').addEventListener('change', ()=>{
+      const daysInactive = parseInt(document.getElementById('daysInactive').value) || 180;
+      if (selectedCustomerId) renderAccounts(selectedCustomerId);
+      // If onlyDormant is checked, re-filter customer list
+      if (document.getElementById('onlyDormant').checked) {
+        const filtered = customers.filter(c => customerHasDormantAccounts(c.customer_id, daysInactive));
+        renderCustomers(filtered);
+      }
+    });
+
+    // Initialize
+    (async ()=>{
+      try {
+        await loadAll();
+      } catch (err) {
+        document.querySelector('body').innerHTML = `<div style="padding:20px;color:#900">Error loading data: ${err.message}. Serve the repo root so '/data/*.csv' is accessible. Example (use port 8100): <code>python3 -m http.server 8100</code> then open <a href="http://localhost:8100/customers.html">http://localhost:8100/customers.html</a></div>`;
+      }
+    })();
+  </script>
+</body>
+</html>

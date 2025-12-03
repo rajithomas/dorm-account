@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "banking-simulator": {
+      "command": "python3",
+      "args": [
+        "/Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+      ],
+      "env": {}
+    }
+  }
+}
