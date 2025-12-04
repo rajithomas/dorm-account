@@ -38,29 +38,6 @@ Features:
 python3 mcp_server_mcp.py
 ```
 
-### 3. Optional: FastAPI HTTP Wrapper (for HTTP / JSON-RPC-over-HTTP clients)
-**File:** `mcp_server_fastapi.py`
-**Port:** 8200
-**URL:** http://localhost:8200
-
-This HTTP server exposes the same tools via REST (`/api/tool/{tool_name}`) and a simple
-JSON-RPC-over-HTTP endpoint `/rpc`. This is intended for testing, browser access, and integrations
-that prefer HTTP. It is not a replacement for the stdio MCP server required by Claude.
-
-**Start (recommended port 8200):**
-```bash
-pip install fastapi uvicorn python-multipart
-uvicorn mcp_server_fastapi:app --host 0.0.0.0 --port 8200
-```
-
-You can also start the FastAPI server alongside the stdio MCP server using the
-new `--start-fastapi` option in `mcp_server_mcp.py`:
-
-```bash
-# This will start the stdio MCP server and spawn a uvicorn process for the HTTP API
-python3 mcp_server_mcp.py --start-fastapi
-```
-
 ## Using with Claude
 
 ### Step 1: Get the MCP Server Path

@@ -11,12 +11,9 @@ Usage:
 Configure in Claude/MCP client settings to use this server.
 """
 
-import argparse
 import json
-import shutil
-import subprocess
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 import asyncio
 
 from mcp.server import Server
@@ -192,31 +189,6 @@ async def main():
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run the Banking Simulator MCP server.")
-    parser.add_argument('--start-fastapi', action='store_true', help='Also start the FastAPI HTTP server (uvicorn) on port 8200')
-    args = parser.parse_args()
-
-    fastapi_proc: Optional[subprocess.Popen] = None
-    try:
-        if args.start_fastapi:
-            # Try to run uvicorn; prefer system uvicorn if available, otherwise use python -m uvicorn
-            uvicorn_exe = shutil.which('uvicorn')
-            if uvicorn_exe:
-                cmd = [uvicorn_exe, 'mcp_server_fastapi:app', '--host', '0.0.0.0', '--port', '8200']
-            else:
-                # Use python -m uvicorn
-                cmd = [sys.executable, '-m', 'uvicorn', 'mcp_server_fastapi:app', '--host', '0.0.0.0', '--port', '8200']
-
-            print(f"Starting FastAPI server: {' '.join(cmd)}", file=sys.stderr)
-            fastapi_proc = subprocess.Popen(cmd, stdout=sys.stderr, stderr=sys.stderr)
-
-        asyncio.run(main())
-
-    finally:
-        if fastapi_proc:
-            print("Shutting down FastAPI server...", file=sys.stderr)
-            fastapi_proc.terminate()
-            try:
-                fastapi_proc.wait(timeout=5)
+    asyncio.run(main())
             except Exception:
                 fastapi_proc.kill()

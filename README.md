@@ -192,56 +192,12 @@ curl -X POST http://localhost:5010/api/tool/dormant_accounts \
 
 ---
 
-### 3. FastAPI HTTP Wrapper (Port 8200)
-**Purpose:** REST and JSON-RPC-over-HTTP interface for the banking tools.
-
-**Install dependencies:**
-```bash
-pip install fastapi uvicorn python-multipart
-```
-
-**Start:**
-```bash
-uvicorn mcp_server_fastapi:app --host 0.0.0.0 --port 8200
-```
-
-**Endpoints:**
-- Base: `http://localhost:8200/`
-- REST tools (POST): `http://localhost:8200/api/tool/{tool_name}`
-- JSON-RPC (POST): `http://localhost:8200/rpc`
-
-**Example REST call:**
-```bash
-curl -X POST http://localhost:8200/api/tool/dormant_with_large_tx \
-  -H "Content-Type: application/json" \
-  -d '{"days_inactive":180, "threshold_amount":1000}'
-```
-
-**Example JSON-RPC call:**
-```bash
-curl -X POST http://localhost:8200/rpc \
-  -H "Content-Type: application/json" \
-  -d '{
-    "jsonrpc":"2.0",
-    "method":"get_dormant_with_large_transactions",
-    "params":{"days_inactive":180,"threshold_amount":1000},
-    "id":1
-  }'
-```
-
----
-
-### 4. MCP Protocol Server (stdio)
+### 3. MCP Protocol Server (stdio)
 **Purpose:** Integration with Claude and other MCP-compatible clients via JSON-RPC over stdio.
 
 **Start (MCP server only):**
 ```bash
 python3 mcp_server_mcp.py
-```
-
-**Start (MCP server + FastAPI wrapper):**
-```bash
-python3 mcp_server_mcp.py --start-fastapi
 ```
 
 **Start with Supergateway (HTTP gateway to MCP):**
@@ -286,8 +242,6 @@ cat mcp_config.json
 3. `get_accounts_with_salary_deposits` — Find accounts with salary deposits
 4. `get_accounts_with_high_balance` — Find accounts with high balances
 
-**Important:** Do NOT point MCP clients to the SSE endpoint (`http://localhost:5010/sse`). Use the stdio server or the FastAPI `/rpc` endpoint for JSON-RPC over HTTP.
-
 ---
 
 ### Summary of URLs
@@ -298,8 +252,6 @@ cat mcp_config.json
 | SSE Dashboard | `http://localhost:5010/` | HTTP | Event dashboard |
 | SSE Stream | `http://localhost:5010/sse` | SSE | Real-time events |
 | REST Tools (SSE) | `http://localhost:5010/api/tool/{tool}` | HTTP POST | REST tool calls |
-| REST Tools (FastAPI) | `http://localhost:8200/api/tool/{tool}` | HTTP POST | REST tool calls |
-| JSON-RPC (FastAPI) | `http://localhost:8200/rpc` | HTTP POST | JSON-RPC over HTTP |
 | MCP Server | stdio | JSON-RPC | Claude / MCP clients |
 
 ---

@@ -35,42 +35,26 @@ http://localhost:8100/customers.html
 
 4) SSE / Dashboard (Flask)
 
-Start the SSE dashboard and REST API (port 5001):
+Start the SSE dashboard and REST API (port 5010):
 
 ```bash
 python3 sse_server.py
 ```
 
 Endpoints:
-- Dashboard: http://localhost:5001/
-- SSE stream: http://localhost:5001/sse
-- API stats: http://localhost:5001/api/stats
+- Dashboard: http://localhost:5010/
+- SSE stream: http://localhost:5010/sse
+- API stats: http://localhost:5010/api/stats
 
-5) FastAPI HTTP wrapper (optional)
-
-This provides REST and JSON-RPC-over-HTTP endpoints for the same tools.
-
-```bash
-pip install fastapi uvicorn python-multipart
-uvicorn mcp_server_fastapi:app --host 0.0.0.0 --port 8200
-```
-
-Endpoints:
-- Base: http://localhost:8200/
-- REST tools: POST /api/tool/{tool_name}
-- JSON-RPC: POST /rpc
-
-6) MCP stdio Server (for Claude)
+5) MCP stdio Server (for Claude)
 
 Start the proper MCP server (JSON-RPC over stdio). This is what Claude expects:
 
 ```bash
 python3 mcp_server_mcp.py
-# or, start stdio MCP server and the FastAPI wrapper together:
-python3 mcp_server_mcp.py --start-fastapi
 ```
 
-7) Sample data
+6) Sample data
 
 Generate sample data (will overwrite `data/*.csv`):
 
@@ -78,28 +62,20 @@ Generate sample data (will overwrite `data/*.csv`):
 python3 generate_sample_data.py
 ```
 
-8) Helpful curl examples
+7) Helpful curl examples
 
-REST tool call (FastAPI):
+REST tool call (SSE server):
 
 ```bash
-curl -X POST http://localhost:8200/api/tool/dormant_accounts \
+curl -X POST http://localhost:5010/api/tool/dormant_accounts \
   -H "Content-Type: application/json" \
   -d '{"days_inactive":180}'
 ```
 
-JSON-RPC call (FastAPI `/rpc`):
+SSE stream test:
 
 ```bash
-curl -X POST http://localhost:8200/rpc \
-  -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","method":"get_dormant_with_large_transactions","params":{"days_inactive":180,"threshold_amount":1000},"id":1}'
-```
-
-SSE test (raw):
-
-```bash
-curl -N -H "Accept: text/event-stream" http://localhost:5001/sse
+curl -N -H "Accept: text/event-stream" http://localhost:5010/sse
 ```
 
 Notes
