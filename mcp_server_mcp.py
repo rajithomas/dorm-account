@@ -190,5 +190,3 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
-            except Exception:
-                fastapi_proc.kill()
