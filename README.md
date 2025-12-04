@@ -149,6 +149,147 @@ http://localhost:8100/customers.html
 - **Dormant Filter**: Toggle "Show only dormant accounts" with configurable inactivity threshold (default: 180 days)
 - **Transactions**: Click an account row to view the last 10 transactions
 
+## Servers & URLs
+
+This project provides multiple server interfaces for different use cases.
+
+### 1. Static Web UI Server (Port 8100)
+**Purpose:** Browse customers, accounts, and transactions in an interactive web interface.
+
+**Start:**
+```bash
+./run_server.sh
+# or
+python3 -m http.server 8100
+```
+
+**URL:**
+- `http://localhost:8100/customers.html` — Interactive customer/account browser
+
+---
+
+### 2. SSE / Dashboard Server (Port 5001)
+**Purpose:** Real-time event streaming and REST API for banking tools.
+
+**Start:**
+```bash
+python3 sse_server.py
+```
+
+**Endpoints:**
+- Dashboard (web UI): `http://localhost:5001/`
+- SSE stream: `http://localhost:5001/sse` (text/event-stream)
+- API stats: `http://localhost:5001/api/stats`
+- REST tool calls (POST): `http://localhost:5001/api/tool/{tool_name}`
+  - Available tools: `dormant_accounts`, `dormant_with_large_tx`, `salary_deposits`, `high_balance`
+
+**Example REST call:**
+```bash
+curl -X POST http://localhost:5001/api/tool/dormant_accounts \
+  -H "Content-Type: application/json" \
+  -d '{"days":180}'
+```
+
+---
+
+### 3. FastAPI HTTP Wrapper (Port 8200)
+**Purpose:** REST and JSON-RPC-over-HTTP interface for the banking tools.
+
+**Install dependencies:**
+```bash
+pip install fastapi uvicorn python-multipart
+```
+
+**Start:**
+```bash
+uvicorn mcp_server_fastapi:app --host 0.0.0.0 --port 8200
+```
+
+**Endpoints:**
+- Base: `http://localhost:8200/`
+- REST tools (POST): `http://localhost:8200/api/tool/{tool_name}`
+- JSON-RPC (POST): `http://localhost:8200/rpc`
+
+**Example REST call:**
+```bash
+curl -X POST http://localhost:8200/api/tool/dormant_with_large_tx \
+  -H "Content-Type: application/json" \
+  -d '{"days_inactive":180, "threshold_amount":1000}'
+```
+
+**Example JSON-RPC call:**
+```bash
+curl -X POST http://localhost:8200/rpc \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc":"2.0",
+    "method":"get_dormant_with_large_transactions",
+    "params":{"days_inactive":180,"threshold_amount":1000},
+    "id":1
+  }'
+```
+
+---
+
+### 4. MCP Protocol Server (stdio)
+**Purpose:** Integration with Claude and other MCP-compatible clients via JSON-RPC over stdio.
+
+**Start (MCP server only):**
+```bash
+python3 mcp_server_mcp.py
+```
+
+**Start (MCP server + FastAPI wrapper):**
+```bash
+python3 mcp_server_mcp.py --start-fastapi
+```
+
+**Configuration for Claude:**
+
+Add to your Claude settings (`.claude_config.json` or via Claude settings UI):
+
+```json
+{
+  "mcpServers": {
+    "banking-simulator": {
+      "command": "python3",
+      "args": [
+        "/Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+      ]
+    }
+  }
+}
+```
+
+Or use the provided `mcp_config.json`:
+```bash
+cat mcp_config.json
+```
+
+**MCP Tools (available in Claude):**
+1. `get_dormant_accounts` — Find dormant accounts (days_inactive parameter)
+2. `get_dormant_with_large_transactions` — Find dormant accounts with past large transactions
+3. `get_accounts_with_salary_deposits` — Find accounts with salary deposits
+4. `get_accounts_with_high_balance` — Find accounts with high balances
+
+**Important:** Do NOT point MCP clients to the SSE endpoint (`http://localhost:5001/sse`). Use the stdio server or the FastAPI `/rpc` endpoint for JSON-RPC over HTTP.
+
+---
+
+### Summary of URLs
+
+| Service | URL | Protocol | Purpose |
+|---------|-----|----------|---------|
+| Static UI | `http://localhost:8100/customers.html` | HTTP | Customer/account browser |
+| SSE Dashboard | `http://localhost:5001/` | HTTP | Event dashboard |
+| SSE Stream | `http://localhost:5001/sse` | SSE | Real-time events |
+| REST Tools (SSE) | `http://localhost:5001/api/tool/{tool}` | HTTP POST | REST tool calls |
+| REST Tools (FastAPI) | `http://localhost:8200/api/tool/{tool}` | HTTP POST | REST tool calls |
+| JSON-RPC (FastAPI) | `http://localhost:8200/rpc` | HTTP POST | JSON-RPC over HTTP |
+| MCP Server | stdio | JSON-RPC | Claude / MCP clients |
+
+---
+
 ## Scripts
 
 ### Generate Sample Data
