@@ -168,7 +168,7 @@ python3 -m http.server 8100
 
 ---
 
-### 2. SSE / Dashboard Server (Port 5001)
+### 2. SSE / Dashboard Server (Port 5010)
 **Purpose:** Real-time event streaming and REST API for banking tools.
 
 **Start:**
@@ -177,15 +177,15 @@ python3 sse_server.py
 ```
 
 **Endpoints:**
-- Dashboard (web UI): `http://localhost:5001/`
-- SSE stream: `http://localhost:5001/sse` (text/event-stream)
-- API stats: `http://localhost:5001/api/stats`
-- REST tool calls (POST): `http://localhost:5001/api/tool/{tool_name}`
+- Dashboard (web UI): `http://localhost:5010/`
+- SSE stream: `http://localhost:5010/sse` (text/event-stream)
+- API stats: `http://localhost:5010/api/stats`
+- REST tool calls (POST): `http://localhost:5010/api/tool/{tool_name}`
   - Available tools: `dormant_accounts`, `dormant_with_large_tx`, `salary_deposits`, `high_balance`
 
 **Example REST call:**
 ```bash
-curl -X POST http://localhost:5001/api/tool/dormant_accounts \
+curl -X POST http://localhost:5010/api/tool/dormant_accounts \
   -H "Content-Type: application/json" \
   -d '{"days":180}'
 ```
@@ -244,6 +244,20 @@ python3 mcp_server_mcp.py
 python3 mcp_server_mcp.py --start-fastapi
 ```
 
+**Start with Supergateway (HTTP gateway to MCP):**
+```bash
+npx -y supergateway --stdio "python3 /Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+```
+
+Supergateway will expose the MCP server via HTTP on port 8000:
+- SSE endpoint: `http://localhost:8000/sse`
+- POST messages: `http://localhost:8000/message`
+
+**Or use the shell wrapper:**
+```bash
+npx -y supergateway --stdio "bash /Users/rajithomas/lab/dorm-account/run_mcp_server.sh"
+```
+
 **Configuration for Claude:**
 
 Add to your Claude settings (`.claude_config.json` or via Claude settings UI):
@@ -272,7 +286,7 @@ cat mcp_config.json
 3. `get_accounts_with_salary_deposits` — Find accounts with salary deposits
 4. `get_accounts_with_high_balance` — Find accounts with high balances
 
-**Important:** Do NOT point MCP clients to the SSE endpoint (`http://localhost:5001/sse`). Use the stdio server or the FastAPI `/rpc` endpoint for JSON-RPC over HTTP.
+**Important:** Do NOT point MCP clients to the SSE endpoint (`http://localhost:5010/sse`). Use the stdio server or the FastAPI `/rpc` endpoint for JSON-RPC over HTTP.
 
 ---
 
@@ -281,9 +295,9 @@ cat mcp_config.json
 | Service | URL | Protocol | Purpose |
 |---------|-----|----------|---------|
 | Static UI | `http://localhost:8100/customers.html` | HTTP | Customer/account browser |
-| SSE Dashboard | `http://localhost:5001/` | HTTP | Event dashboard |
-| SSE Stream | `http://localhost:5001/sse` | SSE | Real-time events |
-| REST Tools (SSE) | `http://localhost:5001/api/tool/{tool}` | HTTP POST | REST tool calls |
+| SSE Dashboard | `http://localhost:5010/` | HTTP | Event dashboard |
+| SSE Stream | `http://localhost:5010/sse` | SSE | Real-time events |
+| REST Tools (SSE) | `http://localhost:5010/api/tool/{tool}` | HTTP POST | REST tool calls |
 | REST Tools (FastAPI) | `http://localhost:8200/api/tool/{tool}` | HTTP POST | REST tool calls |
 | JSON-RPC (FastAPI) | `http://localhost:8200/rpc` | HTTP POST | JSON-RPC over HTTP |
 | MCP Server | stdio | JSON-RPC | Claude / MCP clients |

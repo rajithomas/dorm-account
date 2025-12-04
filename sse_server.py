@@ -351,7 +351,7 @@ def stats():
 
 if __name__ == '__main__':
     print("Starting Banking Simulator SSE Server...")
-    print("Open: http://localhost:5001")
-    print("SSE Endpoint: http://localhost:5001/sse")
-    print("API Stats: http://localhost:5001/api/stats")
-    app.run(debug=False, host='0.0.0.0', port=5001, threaded=True)
+    print("Open: http://localhost:5010")
+    print("SSE Endpoint: http://localhost:5010/sse")
+    print("API Stats: http://localhost:5010/api/stats")
+    app.run(debug=False, host='0.0.0.0', port=5010, threaded=True)

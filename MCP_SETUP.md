@@ -8,8 +8,8 @@ The Banking Simulator now has a proper **MCP (Model Context Protocol) server** t
 
 ### 1. Flask SSE Server (Web Dashboard + REST API)
 **File:** `sse_server.py`  
-**Port:** 5001  
-**URL:** http://localhost:5001
+**Port:** 5010  
+**URL:** http://localhost:5010
 
 Features:
 - Interactive web dashboard with banking tools
@@ -185,9 +185,9 @@ python3 mcp_server_mcp.py
 ## Troubleshooting
 
 ### Error: "Address already in use"
-Port 5001 is in use. Kill it:
+Port 5010 is in use. Kill it:
 ```bash
-lsof -ti:5001 | xargs kill -9
+lsof -ti:5010 | xargs kill -9
 ```
 
 ### Error: "Module not found: mcp"
