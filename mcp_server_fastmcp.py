@@ -1,13 +1,17 @@
 """
-FastMCP HTTP server for Banking Simulator tools.
-Exposes the same four banking tools via FastMCP on port 8300.
+FastMCP server for Banking Simulator tools.
+Exposes the same four banking tools; supports streamable HTTP (default), SSE, or stdio transports.
 """
 
+import argparse
 import json
 from fastmcp.server import FastMCP
 from mcp.types import TextContent
 from mcp_server import BankingAnalyzer
 
+
+DEFAULT_PORT = 8300
+DEFAULT_TRANSPORT = "streamable-http"  # options: streamable-http, sse, stdio
 
 app = FastMCP(name="banking-simulator-fastmcp")
 
@@ -37,5 +41,15 @@ async def get_accounts_with_high_balance_tool(threshold_amount: float = 100000) 
 
 
 if __name__ == "__main__":
-    # Run as HTTP/streamable endpoint on port 8300
-    app.run(transport="streamable-http", host="0.0.0.0", port=8300)
+    parser = argparse.ArgumentParser(description="FastMCP server for Banking Simulator tools")
+    parser.add_argument("--port", type=int, default=DEFAULT_PORT, help="Port to listen on (default: 8300)")
+    parser.add_argument(
+        "--transport",
+        choices=["streamable-http", "sse", "stdio"],
+        default=DEFAULT_TRANSPORT,
+        help="Transport to use (streamable-http, sse, stdio). Default: streamable-http",
+    )
+    args = parser.parse_args()
+
+    # Run with requested transport and port
+    app.run(transport=args.transport, host="0.0.0.0", port=args.port)

@@ -81,4 +81,4 @@ curl -N -H "Accept: text/event-stream" http://localhost:5010/sse
 Notes
 - The SSE endpoint is a streaming endpoint and is not a JSON-RPC endpoint. Do not point MCP clients at `/sse`.
 - Use the stdio MCP server (`mcp_server_mcp.py`) for Claude integration.
-- FastMCP HTTP server is available at `http://localhost:8300/mcp` via `python3 mcp_server_fastmcp.py`.
+- FastMCP server: HTTP streamable at `http://localhost:8300/mcp` with `--transport streamable-http`; SSE at `http://localhost:8300/sse` with `--transport sse`.

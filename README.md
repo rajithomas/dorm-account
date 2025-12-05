@@ -205,15 +205,20 @@ python3 mcp_server_mcp.py
 npx -y supergateway --stdio "python3 /Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
 ```
 
-### 4. FastMCP HTTP Server (Port 8300)
-**Purpose:** HTTP/streamable MCP endpoint exposing the same four tools.
+### 4. FastMCP Server (Port 8300)
+**Purpose:** MCP endpoint via FastMCP with streamable HTTP (default) or SSE transport.
 
-**Start:**
+**HTTP (default streamable):**
 ```bash
-python3 mcp_server_fastmcp.py
+python3 mcp_server_fastmcp.py --transport streamable-http --port 8300
 ```
+Endpoint: `http://localhost:8300/mcp`
 
-Server runs at `http://localhost:8300/mcp`.
+**SSE transport:**
+```bash
+python3 mcp_server_fastmcp.py --transport sse --port 8300
+```
+Endpoint: `http://localhost:8300/sse`
 
 Supergateway will expose the MCP server via HTTP on port 8000:
 - SSE endpoint: `http://localhost:8000/sse`
@@ -263,6 +268,7 @@ cat mcp_config.json
 | SSE Stream | `http://localhost:5010/sse` | SSE | Real-time events |
 | REST Tools (SSE) | `http://localhost:5010/api/tool/{tool}` | HTTP POST | REST tool calls |
 | FastMCP HTTP | `http://localhost:8300/mcp` | HTTP (streamable) | MCP over HTTP via FastMCP |
+| FastMCP SSE | `http://localhost:8300/sse` | SSE | MCP over SSE via FastMCP |
 | MCP Server | stdio | JSON-RPC | Claude / MCP clients |
 
 ---
