@@ -4,9 +4,34 @@
 
 The Banking Simulator now has a proper **MCP (Model Context Protocol) server** that integrates with Claude and other MCP clients.
 
-## Two Server Options
+## Two MCP Options
 
-### 1. Flask SSE Server (Web Dashboard + REST API)
+### Option 1: MCP via Supergateway (stdio → HTTP on 8000)
+- **Run:**
+```bash
+npx -y supergateway --stdio "python3 /Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+# or wrapper
+npx -y supergateway --stdio "bash /Users/rajithomas/lab/dorm-account/run_mcp_server.sh"
+```
+- **Endpoints (Supergateway):**
+  - SSE: `http://localhost:8000/sse`
+  - Message POST: `http://localhost:8000/message`
+- **Use this for Claude (primary path).**
+
+### Option 2: FastMCP HTTP/SSE (port 8300)
+- **HTTP (streamable):**
+```bash
+python3 mcp_server_fastmcp.py --transport streamable-http --port 8300
+```
+  Endpoint: `http://localhost:8300/mcp`
+
+- **SSE:**
+```bash
+python3 mcp_server_fastmcp.py --transport sse --port 8300
+```
+  Endpoint: `http://localhost:8300/sse`
+
+### Related: Flask SSE Dashboard (port 5010)
 **File:** `sse_server.py`  
 **Port:** 5010  
 **URL:** http://localhost:5010
@@ -20,22 +45,6 @@ Features:
 **Start:**
 ```bash
 python3 sse_server.py
-```
-
-### 2. MCP Protocol Server (Claude Integration)
-**File:** `mcp_server_mcp.py`  
-**Protocol:** JSON-RPC over stdio  
-**Format:** Model Context Protocol (MCP)
-
-Features:
-- Four banking analysis tools as MCP tools
-- Direct integration with Claude
-- JSON-RPC message format
-- Proper MCP schema and validation
-
-**Start:**
-```bash
-python3 mcp_server_mcp.py
 ```
 
 ## Using with Claude

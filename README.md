@@ -192,42 +192,34 @@ curl -X POST http://localhost:5010/api/tool/dormant_accounts \
 
 ---
 
-### 3. MCP Protocol Server (stdio)
-**Purpose:** Integration with Claude and other MCP-compatible clients via JSON-RPC over stdio.
+### 3. MCP via Supergateway (stdio → HTTP on port 8000)
+**Purpose:** Primary MCP option for Claude; bridges the stdio MCP server to HTTP using Supergateway.
 
-**Start (MCP server only):**
-```bash
-python3 mcp_server_mcp.py
-```
-
-**Start with Supergateway (HTTP gateway to MCP):**
+**Start:**
 ```bash
 npx -y supergateway --stdio "python3 /Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+# or with the wrapper
+npx -y supergateway --stdio "bash /Users/rajithomas/lab/dorm-account/run_mcp_server.sh"
 ```
 
-### 4. FastMCP Server (Port 8300)
-**Purpose:** MCP endpoint via FastMCP with streamable HTTP (default) or SSE transport.
+**Endpoints (Supergateway on port 8000):**
+- SSE stream: `http://localhost:8000/sse`
+- Message POST: `http://localhost:8000/message`
 
-**HTTP (default streamable):**
+### 4. FastMCP Server (Port 8300)
+**Purpose:** Alternate MCP option over HTTP/SSE without Supergateway; exposes the same four tools.
+
+**HTTP (streamable) option:**
 ```bash
 python3 mcp_server_fastmcp.py --transport streamable-http --port 8300
 ```
 Endpoint: `http://localhost:8300/mcp`
 
-**SSE transport:**
+**SSE option:**
 ```bash
 python3 mcp_server_fastmcp.py --transport sse --port 8300
 ```
 Endpoint: `http://localhost:8300/sse`
-
-Supergateway will expose the MCP server via HTTP on port 8000:
-- SSE endpoint: `http://localhost:8000/sse`
-- POST messages: `http://localhost:8000/message`
-
-**Or use the shell wrapper:**
-```bash
-npx -y supergateway --stdio "bash /Users/rajithomas/lab/dorm-account/run_mcp_server.sh"
-```
 
 **Configuration for Claude:**
 
@@ -269,7 +261,8 @@ cat mcp_config.json
 | REST Tools (SSE) | `http://localhost:5010/api/tool/{tool}` | HTTP POST | REST tool calls |
 | FastMCP HTTP | `http://localhost:8300/mcp` | HTTP (streamable) | MCP over HTTP via FastMCP |
 | FastMCP SSE | `http://localhost:8300/sse` | SSE | MCP over SSE via FastMCP |
-| MCP Server | stdio | JSON-RPC | Claude / MCP clients |
+| MCP via Supergateway | `http://localhost:8000` | HTTP gateway | Bridges stdio MCP to HTTP/SSE |
+| MCP Server (stdio) | stdio | JSON-RPC | Claude / MCP clients |
 
 ---
 

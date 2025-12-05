@@ -46,15 +46,35 @@ Endpoints:
 - SSE stream: http://localhost:5010/sse
 - API stats: http://localhost:5010/api/stats
 
-5) MCP stdio Server (for Claude)
+5) MCP via Supergateway (stdio → HTTP)
 
-Start the proper MCP server (JSON-RPC over stdio). This is what Claude expects:
+Run the stdio MCP server through Supergateway (port 8000):
 
 ```bash
-python3 mcp_server_mcp.py
+npx -y supergateway --stdio "python3 /Users/rajithomas/lab/dorm-account/mcp_server_mcp.py"
+# or
+npx -y supergateway --stdio "bash /Users/rajithomas/lab/dorm-account/run_mcp_server.sh"
 ```
 
-6) Sample data
+Endpoints (Supergateway on 8000):
+- SSE: http://localhost:8000/sse
+- Message POST: http://localhost:8000/message
+
+6) FastMCP (HTTP/SSE on 8300)
+
+Streamable HTTP:
+```bash
+python3 mcp_server_fastmcp.py --transport streamable-http --port 8300
+```
+Endpoint: http://localhost:8300/mcp
+
+SSE transport:
+```bash
+python3 mcp_server_fastmcp.py --transport sse --port 8300
+```
+Endpoint: http://localhost:8300/sse
+
+7) Sample data
 
 Generate sample data (will overwrite `data/*.csv`):
 
